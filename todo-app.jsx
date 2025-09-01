@@ -1,324 +1,362 @@
-import React, { useState, useEffect } from 'react';
-import { initializeApp } from 'firebase/app';
-import { getAuth, signInWithCustomToken, signInAnonymously } from 'firebase/auth';
-import { getFirestore, collection, addDoc, onSnapshot, updateDoc, deleteDoc, doc, query, orderBy } from 'firebase/firestore';
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Todo List App</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, collection, addDoc, onSnapshot, updateDoc, deleteDoc, doc, query, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-// IMPORTANT: These global variables are provided by the canvas environment.
-// DO NOT MODIFY them.
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+    // IMPORTANT: These global variables are provided by the canvas environment.
+    // DO NOT MODIFY them.
+    window.appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+    window.firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+    window.initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+    
+    // Make these available to the script below
+    window.firebase = {
+        initializeApp,
+        getAuth,
+        signInWithCustomToken,
+        signInAnonymously,
+        onAuthStateChanged,
+        getFirestore,
+        collection,
+        addDoc,
+        onSnapshot,
+        updateDoc,
+        deleteDoc,
+        doc,
+        query,
+        orderBy
+    };
+  </script>
+</head>
+<body class="bg-slate-950">
+  <div id="root"></div>
 
-// The main App component containing all the logic and UI
-const App = () => {
-  const [db, setDb] = useState(null);
-  const [auth, setAuth] = useState(null);
-  const [userId, setUserId] = useState(null);
-  const [isAuthReady, setIsAuthReady] = useState(false);
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+    const {
+        initializeApp, getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged,
+        getFirestore, collection, addDoc, onSnapshot, updateDoc, deleteDoc, doc, query, orderBy
+    } = window.firebase;
+    
+    const { appId, firebaseConfig, initialAuthToken } = window;
 
-  // State for managing todos and new todo input
-  const [todos, setTodos] = useState([]);
-  const [newTodo, setNewTodo] = useState('');
-  const [editingTodoId, setEditingTodoId] = useState(null);
-  const [editingTodoText, setEditingTodoText] = useState('');
-  const [message, setMessage] = useState('');
+    // The main App component containing all the logic and UI
+    const App = () => {
+      const [db, setDb] = useState(null);
+      const [auth, setAuth] = useState(null);
+      const [userId, setUserId] = useState(null);
+      const [message, setMessage] = useState('');
 
-  // Initialize Firebase and set up authentication
-  useEffect(() => {
-    try {
-      if (!Object.keys(firebaseConfig).length) {
-        console.error("Firebase config is missing. Please check your environment variables.");
-        return;
-      }
-      const app = initializeApp(firebaseConfig);
-      const auth = getAuth(app);
-      const db = getFirestore(app);
-
-      // Listen for auth state changes
-      const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
-        if (user) {
-          setUserId(user.uid);
-          setIsAuthReady(true);
-        } else {
-          // Sign in anonymously if no token is available
-          await signInAnonymously(auth);
-        }
-      });
-      
-      setDb(db);
-      setAuth(auth);
-
-      return () => unsubscribeAuth();
-    } catch (error) {
-      console.error("Error initializing Firebase:", error);
-      setMessage("Error initializing the application. Please check the console for details.");
-    }
-  }, []);
-
-  // Handle custom auth token sign-in
-  useEffect(() => {
-    const handleSignIn = async () => {
-      if (auth && initialAuthToken) {
+      // Initialize Firebase and set up authentication
+      useEffect(() => {
         try {
-          await signInWithCustomToken(auth, initialAuthToken);
+          if (!Object.keys(firebaseConfig).length) {
+            console.error("Firebase config is missing. Please check your environment variables.");
+            return;
+          }
+          const app = initializeApp(firebaseConfig);
+          const auth = getAuth(app);
+          const db = getFirestore(app);
+
+          // Listen for auth state changes
+          const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
+            if (user) {
+              setUserId(user.uid);
+            } else {
+              // Sign in anonymously if no token is available
+              await signInAnonymously(auth);
+            }
+          });
+          
+          setDb(db);
+          setAuth(auth);
+
+          return () => unsubscribeAuth();
         } catch (error) {
-          console.error("Error signing in with custom token:", error);
-          // Fallback to anonymous sign-in if custom token fails
-          if (auth.currentUser === null) {
+          console.error("Error initializing Firebase:", error);
+          setMessage("Error initializing the application. Please check the console for details.");
+        }
+      }, []);
+
+      // Handle custom auth token sign-in
+      useEffect(() => {
+        const handleSignIn = async () => {
+          if (auth && initialAuthToken) {
+            try {
+              await signInWithCustomToken(auth, initialAuthToken);
+            } catch (error) {
+              console.error("Error signing in with custom token:", error);
+              // Fallback to anonymous sign-in if custom token fails
+              if (auth.currentUser === null) {
+                await signInAnonymously(auth);
+              }
+            }
+          } else if (auth) {
+            // Fallback to anonymous sign-in
             await signInAnonymously(auth);
           }
+        };
+
+        if (auth && !userId) {
+          handleSignIn();
         }
-      } else if (auth) {
-        // Fallback to anonymous sign-in
-        await signInAnonymously(auth);
-      }
-    };
+      }, [auth, userId]);
 
-    if (auth && !userId) {
-      handleSignIn();
-    }
-  }, [auth, userId]);
+      // Fetch todos from Firestore when auth state is ready
+      useEffect(() => {
+        if (db && userId) {
+          try {
+            const todosCollectionRef = collection(db, `/artifacts/${appId}/users/${userId}/todos`);
+            const todosQuery = query(todosCollectionRef, orderBy('createdAt', 'desc'));
 
-  // Fetch todos from Firestore when auth state is ready
-  useEffect(() => {
-    if (db && userId) {
-      try {
-        const todosCollectionRef = collection(db, `/artifacts/${appId}/users/${userId}/todos`);
-        const todosQuery = query(todosCollectionRef, orderBy('createdAt', 'desc'));
+            const unsubscribe = onSnapshot(todosQuery, (snapshot) => {
+              const todosData = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+              }));
+              setTodos(todosData);
+              setMessage(''); // Clear any previous error messages
+            }, (error) => {
+              console.error("Error fetching todos:", error);
+              setMessage("Could not fetch todos. Please check your network connection and permissions.");
+            });
 
-        const unsubscribe = onSnapshot(todosQuery, (snapshot) => {
-          const todosData = snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-          }));
-          setTodos(todosData);
-          setMessage(''); // Clear any previous error messages
-        }, (error) => {
-          console.error("Error fetching todos:", error);
-          setMessage("Could not fetch todos. Please check your network connection and permissions.");
-        });
+            return () => unsubscribe();
+          } catch (error) {
+            console.error("Error setting up Firestore listener:", error);
+            setMessage("An error occurred while setting up the database connection.");
+          }
+        }
+      }, [db, userId]);
 
-        return () => unsubscribe();
-      } catch (error) {
-        console.error("Error setting up Firestore listener:", error);
-        setMessage("An error occurred while setting up the database connection.");
-      }
-    }
-  }, [db, userId]);
-
-  // Function to add a new todo
-  const handleAddTodo = async () => {
-    if (newTodo.trim() === '') return;
-    if (!db || !userId) {
-      setMessage("Database not ready. Please wait a moment.");
-      return;
-    }
-    
-    try {
-      const todosCollectionRef = collection(db, `/artifacts/${appId}/users/${userId}/todos`);
-      await addDoc(todosCollectionRef, {
-        text: newTodo,
-        completed: false,
-        createdAt: new Date(),
-        userId: userId,
-      });
-      setNewTodo('');
-      setMessage('');
-    } catch (error) {
-      console.error("Error adding todo:", error);
-      setMessage("Failed to add todo. Please try again.");
-    }
-  };
-
-  // Function to toggle a todo's completion status
-  const handleToggleTodo = async (id, completed) => {
-    if (!db || !userId) {
-      setMessage("Database not ready. Please wait a moment.");
-      return;
-    }
-
-    try {
-      const todoRef = doc(db, `/artifacts/${appId}/users/${userId}/todos`, id);
-      await updateDoc(todoRef, {
-        completed: !completed,
-      });
-      setMessage('');
-    } catch (error) {
-      console.error("Error toggling todo:", error);
-      setMessage("Failed to update todo status.");
-    }
-  };
-
-  // Function to delete a todo
-  const handleDeleteTodo = async (id) => {
-    if (!db || !userId) {
-      setMessage("Database not ready. Please wait a moment.");
-      return;
-    }
-
-    try {
-      const todoRef = doc(db, `/artifacts/${appId}/users/${userId}/todos`, id);
-      await deleteDoc(todoRef);
-      setMessage('');
-    } catch (error) {
-      console.error("Error deleting todo:", error);
-      setMessage("Failed to delete todo.");
-    }
-  };
-
-  // Function to start editing a todo
-  const handleEditStart = (todo) => {
-    setEditingTodoId(todo.id);
-    setEditingTodoText(todo.text);
-  };
-
-  // Function to save the edited todo
-  const handleEditSave = async () => {
-    if (editingTodoText.trim() === '') {
-      setEditingTodoId(null);
-      return;
-    }
-    if (!db || !userId) {
-      setMessage("Database not ready. Please wait a moment.");
-      return;
-    }
-
-    try {
-      const todoRef = doc(db, `/artifacts/${appId}/users/${userId}/todos`, editingTodoId);
-      await updateDoc(todoRef, {
-        text: editingTodoText,
-      });
-      setEditingTodoId(null);
-      setMessage('');
-    } catch (error) {
-      console.error("Error saving edited todo:", error);
-      setMessage("Failed to save todo edits.");
-    }
-  };
-
-  // Basic styling using Tailwind CSS classes (assumed to be available)
-  return (
-    <div className="min-h-screen bg-slate-950 text-white flex flex-col items-center justify-center p-4 font-sans">
-      <div className="bg-slate-800 p-8 rounded-2xl shadow-lg w-full max-w-xl flex flex-col">
-        <h1 className="text-4xl font-extrabold text-center mb-6 text-indigo-400">Todo List</h1>
+      // Function to add a new todo
+      const handleAddTodo = async () => {
+        if (newTodo.trim() === '') return;
+        if (!db || !userId) {
+          setMessage("Database not ready. Please wait a moment.");
+          return;
+        }
         
-        {message && (
-          <div className="bg-red-500 text-white p-3 rounded-md mb-4 text-center">
-            {message}
-          </div>
-        )}
+        try {
+          const todosCollectionRef = collection(db, `/artifacts/${appId}/users/${userId}/todos`);
+          await addDoc(todosCollectionRef, {
+            text: newTodo,
+            completed: false,
+            createdAt: new Date(),
+            userId: userId,
+          });
+          setNewTodo('');
+          setMessage('');
+        } catch (error) {
+          console.error("Error adding todo:", error);
+          setMessage("Failed to add todo. Please try again.");
+        }
+      };
 
-        {userId && (
-          <p className="text-xs text-center text-slate-400 mb-4 break-all">
-            User ID: {userId}
-          </p>
-        )}
+      // Function to toggle a todo's completion status
+      const handleToggleTodo = async (id, completed) => {
+        if (!db || !userId) {
+          setMessage("Database not ready. Please wait a moment.");
+          return;
+        }
 
-        {/* Input for new todos */}
-        <div className="flex items-center space-x-2 mb-6">
-          <input
-            type="text"
-            className="flex-grow p-3 rounded-xl bg-slate-700 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            placeholder="What needs to be done?"
-            value={newTodo}
-            onChange={(e) => setNewTodo(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleAddTodo()}
-          />
-          <button
-            onClick={handleAddTodo}
-            className="p-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-lg transition-transform transform hover:scale-105"
-            aria-label="Add new todo"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-          </button>
-        </div>
+        try {
+          const todoRef = doc(db, `/artifacts/${appId}/users/${userId}/todos`, id);
+          await updateDoc(todoRef, {
+            completed: !completed,
+          });
+          setMessage('');
+        } catch (error) {
+          console.error("Error toggling todo:", error);
+          setMessage("Failed to update todo status.");
+        }
+      };
 
-        {/* Todo list */}
-        <div className="space-y-4 max-h-96 overflow-y-auto pr-2">
-          {todos.length > 0 ? (
-            todos.map((todo) => (
-              <div
-                key={todo.id}
-                className={`flex items-center p-4 rounded-xl shadow-md transition-all duration-300 ${
-                  todo.completed ? 'bg-slate-700 opacity-60' : 'bg-slate-700'
-                }`}
+      // Function to delete a todo
+      const handleDeleteTodo = async (id) => {
+        if (!db || !userId) {
+          setMessage("Database not ready. Please wait a moment.");
+          return;
+        }
+
+        try {
+          const todoRef = doc(db, `/artifacts/${appId}/users/${userId}/todos`, id);
+          await deleteDoc(todoRef);
+          setMessage('');
+        } catch (error) {
+          console.error("Error deleting todo:", error);
+          setMessage("Failed to delete todo.");
+        }
+      };
+
+      // Function to start editing a todo
+      const handleEditStart = (todo) => {
+        setEditingTodoId(todo.id);
+        setEditingTodoText(todo.text);
+      };
+
+      // Function to save the edited todo
+      const handleEditSave = async () => {
+        if (editingTodoText.trim() === '') {
+          setEditingTodoId(null);
+          return;
+        }
+        if (!db || !userId) {
+          setMessage("Database not ready. Please wait a moment.");
+          return;
+        }
+
+        try {
+          const todoRef = doc(db, `/artifacts/${appId}/users/${userId}/todos`, editingTodoId);
+          await updateDoc(todoRef, {
+            text: editingTodoText,
+          });
+          setEditingTodoId(null);
+          setMessage('');
+        } catch (error) {
+          console.error("Error saving edited todo:", error);
+          setMessage("Failed to save todo edits.");
+        }
+      };
+
+      // Basic styling using Tailwind CSS classes (assumed to be available)
+      return (
+        <div className="min-h-screen bg-slate-950 text-white flex flex-col items-center justify-center p-4 font-sans">
+          <div className="bg-slate-800 p-8 rounded-2xl shadow-lg w-full max-w-xl flex flex-col">
+            <h1 className="text-4xl font-extrabold text-center mb-6 text-indigo-400">Todo List</h1>
+            
+            {message && (
+              <div className="bg-red-500 text-white p-3 rounded-md mb-4 text-center">
+                {message}
+              </div>
+            )}
+
+            {userId && (
+              <p className="text-xs text-center text-slate-400 mb-4 break-all">
+                User ID: {userId}
+              </p>
+            )}
+
+            {/* Input for new todos */}
+            <div className="flex items-center space-x-2 mb-6">
+              <input
+                type="text"
+                className="flex-grow p-3 rounded-xl bg-slate-700 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                placeholder="What needs to be done?"
+                value={newTodo}
+                onChange={(e) => setNewTodo(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleAddTodo()}
+              />
+              <button
+                onClick={handleAddTodo}
+                className="p-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-lg transition-transform transform hover:scale-105"
+                aria-label="Add new todo"
               >
-                {editingTodoId === todo.id ? (
-                  <input
-                    type="text"
-                    value={editingTodoText}
-                    onChange={(e) => setEditingTodoText(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleEditSave()}
-                    className="flex-grow p-2 rounded-lg bg-slate-600 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    autoFocus
-                  />
-                ) : (
-                  <span
-                    className={`flex-grow text-lg transition-all duration-300 ${
-                      todo.completed ? 'line-through text-slate-500' : 'text-slate-200'
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Todo list */}
+            <div className="space-y-4 max-h-96 overflow-y-auto pr-2">
+              {todos.length > 0 ? (
+                todos.map((todo) => (
+                  <div
+                    key={todo.id}
+                    className={`flex items-center p-4 rounded-xl shadow-md transition-all duration-300 ${
+                      todo.completed ? 'bg-slate-700 opacity-60' : 'bg-slate-700'
                     }`}
                   >
-                    {todo.text}
-                  </span>
-                )}
-
-                {/* Action buttons */}
-                <div className="flex items-center space-x-2 ml-4">
-                  {editingTodoId === todo.id ? (
-                    <button
-                      onClick={handleEditSave}
-                      className="p-2 bg-green-500 hover:bg-green-600 text-white rounded-full transition-transform transform hover:scale-110"
-                      aria-label="Save todo edit"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
-                    </button>
-                  ) : (
-                    <>
-                      <button
-                        onClick={() => handleToggleTodo(todo.id, todo.completed)}
-                        className={`p-2 rounded-full transition-transform transform hover:scale-110 ${
-                          todo.completed ? 'bg-slate-600' : 'bg-indigo-500 hover:bg-indigo-600'
+                    {editingTodoId === todo.id ? (
+                      <input
+                        type="text"
+                        value={editingTodoText}
+                        onChange={(e) => setEditingTodoText(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleEditSave()}
+                        className="flex-grow p-2 rounded-lg bg-slate-600 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        autoFocus
+                      />
+                    ) : (
+                      <span
+                        className={`flex-grow text-lg transition-all duration-300 ${
+                          todo.completed ? 'line-through text-slate-500' : 'text-slate-200'
                         }`}
-                        aria-label="Toggle todo completion"
                       >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4a1 1 0 000-1.414z" clipRule="evenodd" />
-                        </svg>
-                      </button>
-                      <button
-                        onClick={() => handleEditStart(todo)}
-                        className="p-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-full transition-transform transform hover:scale-110"
-                        aria-label="Edit todo"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                          <path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828zM15 11l-2 2h-4v-4l2-2 4 4z" />
-                        </svg>
-                      </button>
-                      <button
-                        onClick={() => handleDeleteTodo(todo.id)}
-                        className="p-2 bg-red-500 hover:bg-red-600 text-white rounded-full transition-transform transform hover:scale-110"
-                        aria-label="Delete todo"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-                        </svg>
-                      </button>
-                    </>
-                  )}
-                </div>
-              </div>
-            ))
-          ) : (
-            <p className="text-center text-slate-500">No todos yet. Add one above!</p>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-};
+                        {todo.text}
+                      </span>
+                    )}
 
-export default App;
+                    {/* Action buttons */}
+                    <div className="flex items-center space-x-2 ml-4">
+                      {editingTodoId === todo.id ? (
+                        <button
+                          onClick={handleEditSave}
+                          className="p-2 bg-green-500 hover:bg-green-600 text-white rounded-full transition-transform transform hover:scale-110"
+                          aria-label="Save todo edit"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                        </button>
+                      ) : (
+                        <>
+                          <button
+                            onClick={() => handleToggleTodo(todo.id, todo.completed)}
+                            className={`p-2 rounded-full transition-transform transform hover:scale-110 ${
+                              todo.completed ? 'bg-slate-600' : 'bg-indigo-500 hover:bg-indigo-600'
+                            }`}
+                            aria-label="Toggle todo completion"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" viewBox="0 0 20 20" fill="currentColor">
+                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4a1 1 0 000-1.414z" clipRule="evenodd" />
+                            </svg>
+                          </button>
+                          <button
+                            onClick={() => handleEditStart(todo)}
+                            className="p-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-full transition-transform transform hover:scale-110"
+                            aria-label="Edit todo"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                              <path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828zM15 11l-2 2h-4v-4l2-2 4 4z" />
+                            </svg>
+                          </button>
+                          <button
+                            onClick={() => handleDeleteTodo(todo.id)}
+                            className="p-2 bg-red-500 hover:bg-red-600 text-white rounded-full transition-transform transform hover:scale-110"
+                            aria-label="Delete todo"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                              <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                            </svg>
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className="text-center text-slate-500">No todos yet. Add one above!</p>
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    const domNode = document.getElementById('root');
+    const root = ReactDOM.createRoot(domNode);
+    root.render(<App />);
+  </script>
+</body>
+</html>
