@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Spotify-style Todo App</title>
+  <title>Modern Todo App</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
@@ -12,145 +12,35 @@
     body {
       font-family: 'Inter', sans-serif;
     }
-    .custom-scrollbar::-webkit-scrollbar {
-      width: 8px;
-    }
-    .custom-scrollbar::-webkit-scrollbar-track {
-      background: rgba(0, 0, 0, 0.1);
-      border-radius: 10px;
-    }
-    .custom-scrollbar::-webkit-scrollbar-thumb {
-      background: rgba(0, 0, 0, 0.3);
-      border-radius: 10px;
-      transition: background 0.3s ease;
-    }
-    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-      background: rgba(0, 0, 0, 0.5);
-    }
-    #particles-js {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      top: 0;
-      left: 0;
-      z-index: -1;
+    .frosted-glass {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
     }
   </style>
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
 </head>
-<body class="bg-gray-900">
+<body class="bg-slate-950">
   <div id="root"></div>
-  <div id="particles-js"></div>
 
   <script type="text/babel">
-    const { useState, useEffect, useRef } = React;
+    const { useState, useEffect } = React;
     
     // The main App component containing all the logic and UI
     const App = () => {
-      const audioRef = useRef(null);
+      // State for managing todos and new todo input
       const [todos, setTodos] = useState([]);
       const [newTodo, setNewTodo] = useState('');
       const [editingTodoId, setEditingTodoId] = useState(null);
       const [editingTodoText, setEditingTodoText] = useState('');
       const [theme, setTheme] = useState('dark');
-      const [isPlaying, setIsPlaying] = useState(false);
-
-      useEffect(() => {
-        particlesJS('particles-js', {
-          "particles": {
-            "number": {
-              "value": 80,
-              "density": {
-                "enable": true,
-                "value_area": 800
-              }
-            },
-            "color": {
-              "value": "#1DB954"
-            },
-            "shape": {
-              "type": "circle"
-            },
-            "opacity": {
-              "value": 0.5,
-              "random": false,
-              "anim": {
-                "enable": false
-              }
-            },
-            "size": {
-              "value": 3,
-              "random": true,
-              "anim": {
-                "enable": false
-              }
-            },
-            "line_linked": {
-              "enable": true,
-              "distance": 150,
-              "color": "#1DB954",
-              "opacity": 0.4,
-              "width": 1
-            },
-            "move": {
-              "enable": true,
-              "speed": 2,
-              "direction": "none",
-              "random": false,
-              "straight": false,
-              "out_mode": "out",
-              "bounce": false,
-              "attract": {
-                "enable": false,
-                "rotateX": 600,
-                "rotateY": 1200
-              }
-            }
-          },
-          "interactivity": {
-            "detect_on": "canvas",
-            "events": {
-              "onhover": {
-                "enable": true,
-                "mode": "grab"
-              },
-              "onclick": {
-                "enable": true,
-                "mode": "push"
-              },
-              "resize": true
-            },
-            "modes": {
-              "grab": {
-                "distance": 140,
-                "line_linked": {
-                  "opacity": 1
-                }
-              },
-              "push": {
-                "particles_nb": 4
-              }
-            }
-          },
-          "retina_detect": true
-        });
-      }, []);
 
       // Function to toggle between dark and light themes
       const toggleTheme = () => {
         setTheme(theme === 'dark' ? 'light' : 'dark');
-      };
-
-      const handleToggleMusic = () => {
-        if (isPlaying) {
-          audioRef.current.pause();
-        } else {
-          audioRef.current.play();
-        }
-        setIsPlaying(!isPlaying);
       };
 
       // Function to add a new todo
@@ -195,72 +85,54 @@
       };
       
       const themeClasses = theme === 'dark'
-        ? 'bg-gradient-to-br from-gray-900 to-black text-white'
-        : 'bg-gradient-to-br from-gray-100 to-white text-gray-900';
+        ? 'bg-slate-950 text-white'
+        : 'bg-slate-100 text-slate-900';
       const containerClasses = theme === 'dark'
-        ? 'bg-gray-800 bg-opacity-80 border border-gray-700'
-        : 'bg-white bg-opacity-80 border border-gray-200';
+        ? 'frosted-glass'
+        : 'bg-white shadow-xl';
       const inputClasses = theme === 'dark'
-        ? 'bg-gray-700 text-white placeholder-gray-400 border-gray-600'
-        : 'bg-gray-100 text-gray-900 placeholder-gray-500 border-gray-300';
+        ? 'bg-slate-800 text-white placeholder-slate-400 border border-slate-700'
+        : 'bg-slate-200 text-slate-900 placeholder-slate-500 border border-slate-300';
       const todoItemClasses = theme === 'dark'
-        ? 'bg-gray-700 border-gray-600'
-        : 'bg-gray-100 border-gray-300';
+        ? 'bg-slate-800 border border-slate-700'
+        : 'bg-slate-100 border border-slate-300';
       const completedTextClasses = theme === 'dark'
-        ? 'text-gray-500'
-        : 'text-gray-400';
-      const musicButtonClasses = theme === 'dark'
-        ? 'bg-green-500 hover:bg-green-600 text-white border-green-500'
-        : 'bg-gray-200 hover:bg-gray-300 text-gray-900 border-gray-300';
+        ? 'text-slate-500'
+        : 'text-slate-400';
       const themeButtonClasses = theme === 'dark'
-        ? 'bg-gray-700 hover:bg-gray-600 text-white border-gray-600'
-        : 'bg-gray-200 hover:bg-gray-300 text-gray-900 border-gray-300';
-      const actionButtonColor = theme === 'dark' ? 'text-white' : 'text-gray-900';
+        ? 'bg-indigo-600 text-white hover:bg-indigo-700'
+        : 'bg-slate-800 text-white hover:bg-slate-900';
+      const actionButtonColor = theme === 'dark'
+        ? 'text-white'
+        : 'text-slate-900';
 
       return (
-        <div className={`min-h-screen ${themeClasses} flex flex-col items-center justify-center p-6 font-sans transition-colors duration-300`}>
-          <div className={`${containerClasses} p-8 rounded-3xl shadow-2xl w-full max-w-xl flex flex-col`}>
-            <div className="flex justify-between items-center mb-8">
-              <h1 className="text-4xl font-extrabold text-white tracking-tight">Todo List</h1>
-              <div className="flex space-x-2">
-                <button
-                  onClick={handleToggleMusic}
-                  className={`p-3 rounded-full shadow-lg transition-transform transform hover:scale-105 ${musicButtonClasses} border`}
-                  aria-label="Toggle music"
-                >
+        <div className={`min-h-screen ${themeClasses} flex flex-col items-center justify-center p-4 font-sans transition-colors duration-300`}>
+          <div className={`${containerClasses} p-8 rounded-2xl shadow-lg w-full max-w-xl flex flex-col`}>
+            <div className="flex justify-between items-center mb-6">
+              <h1 className="text-4xl font-extrabold text-indigo-400">Todo List</h1>
+              <button
+                onClick={toggleTheme}
+                className={`p-3 rounded-full transition-transform transform hover:scale-105 ${themeButtonClasses}`}
+                aria-label="Toggle dark/light mode"
+              >
+                {theme === 'dark' ? (
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
-                    {isPlaying ? (
-                      <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
-                    ) : (
-                      <path d="M8 5v14l11-7z"/>
-                    )}
+                    <path d="M12 2.25a.75.75 0 01.75.75v2.25a.75.75 0 01-1.5 0V3a.75.75 0 01.75-.75zM7.5 12a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM18.894 6.106a.75.75 0 00-1.06-.068l-1.748 1.49a.75.75 0 00.99 1.163l1.749-1.49a.75.75 0 00.069-1.06zM6.106 18.894a.75.75 0 001.06.069l1.749-1.49a.75.75 0 00-.99-1.163L6.044 17.834a.75.75 0 00-.069 1.06zM12 15.75a.75.75 0 01.75.75v2.25a.75.75 0 01-1.5 0V16.5a.75.75 0 01.75-.75zM12 6a.75.75 0 01.75.75V9a.75.75 0 01-1.5 0V6.75a.75.75 0 01.75-.75zM3 12a.75.75 0 01.75-.75H6a.75.75 0 010 1.5H3.75A.75.75 0 013 12zM18 12a.75.75 0 01.75-.75h2.25a.75.75 0 010 1.5H18.75A.75.75 0 0118 12zM5.106 5.106a.75.75 0 00-.068 1.06l1.49 1.749a.75.75 0 001.163-.99L6.174 5.044a.75.75 0 00-1.06-.069zM18.894 18.894a.75.75 0 00-.069-1.06l-1.49-1.748a.75.75 0 00-1.163.99l1.49 1.749a.75.75 0 001.06.069z" />
                   </svg>
-                </button>
-                <button
-                  onClick={toggleTheme}
-                  className={`p-3 rounded-full shadow-lg transition-transform transform hover:scale-105 ${themeButtonClasses} border`}
-                  aria-label="Toggle dark/light mode"
-                >
-                  {theme === 'dark' ? (
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M12 2.25a.75.75 0 01.75.75v2.25a.75.75 0 01-1.5 0V3a.75.75 0 01.75-.75zM7.5 12a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM18.894 6.106a.75.75 0 00-1.06-.068l-1.748 1.49a.75.75 0 00.99 1.163l1.749-1.49a.75.75 0 00.069-1.06zM6.106 18.894a.75.75 0 001.06.069l1.749-1.49a.75.75 0 00-.99-1.163L6.044 17.834a.75.75 0 00-.069 1.06zM12 15.75a.75.75 0 01.75.75v2.25a.75.75 0 01-1.5 0V16.5a.75.75 0 01.75-.75zM12 6a.75.75 0 01.75.75V9a.75.75 0 01-1.5 0V6.75a.75.75 0 01.75-.75zM3 12a.75.75 0 01.75-.75H6a.75.75 0 010 1.5H3.75A.75.75 0 013 12zM18 12a.75.75 0 01.75-.75h2.25a.75.75 0 010 1.5H18.75A.75.75 0 0118 12zM5.106 5.106a.75.75 0 00-.068 1.06l1.49 1.749a.75.75 0 001.163-.99L6.174 5.044a.75.75 0 00-1.06-.069zM18.894 18.894a.75.75 0 00-.069-1.06l-1.49-1.748a.75.75 0 00-1.163.99l1.49 1.749a.75.75 0 001.06.069z" />
-                    </svg>
-                  ) : (
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
-                      <path fillRule="evenodd" d="M9.528 1.718a.75.75 0 01.162.836A10.025 10.025 0 008.25 12a10.025 10.025 0 001.44 7.446.75.75 0 11-1.155.964A11.524 11.524 0 018.25 12c0-2.278.583-4.444 1.66-6.335a.75.75 0 01.963-.162zm2.14 9.177a.75.75 0 01.03.957 8.948 8.948 0 001.018 1.638A.75.75 0 0112.75 14a.75.75 0 01-1.171-.914 7.447 7.447 0 01.834-1.343.75.75 0 01.815-.175zm2.844-3.5a.75.75 0 01.026.972 6.444 6.444 0 001.378 1.455.75.75 0 01.077 1.107.75.75 0 01-1.108.078 7.948 7.948 0 01-1.688-1.785.75.75 0 011.023-.927zM20.25 12a8.25 8.25 0 11-16.486-.819.75.75 0 011.16-.949A6.75 6.75 0 0021.75 12a6.75 6.75 0 00-11.233-5.266.75.75 0 01.071-1.11z" clipRule="evenodd" />
-                    </svg>
-                  )}
-                </button>
-              </div>
+                ) : (
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
+                    <path fillRule="evenodd" d="M9.528 1.718a.75.75 0 01.162.836A10.025 10.025 0 008.25 12a10.025 10.025 0 001.44 7.446.75.75 0 11-1.155.964A11.524 11.524 0 018.25 12c0-2.278.583-4.444 1.66-6.335a.75.75 0 01.963-.162zm2.14 9.177a.75.75 0 01.03.957 8.948 8.948 0 001.018 1.638A.75.75 0 0112.75 14a.75.75 0 01-1.171-.914 7.447 7.447 0 01.834-1.343.75.75 0 01.815-.175zm2.844-3.5a.75.75 0 01.026.972 6.444 6.444 0 001.378 1.455.75.75 0 01.077 1.107.75.75 0 01-1.108.078 7.948 7.948 0 01-1.688-1.785.75.75 0 011.023-.927zM20.25 12a8.25 8.25 0 11-16.486-.819.75.75 0 011.16-.949A6.75 6.75 0 0021.75 12a6.75 6.75 0 00-11.233-5.266.75.75 0 01.071-1.11z" clipRule="evenodd" />
+                  </svg>
+                )}
+              </button>
             </div>
             
-            <audio ref={audioRef} loop src="https://www.learningcontainer.com/wp-content/uploads/2020/02/Kalimba.mp3"></audio>
-
             {/* Input for new todos */}
             <div className="flex items-center space-x-2 mb-6">
               <input
                 type="text"
-                className={`flex-grow p-3 rounded-xl shadow-inner focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors duration-300 border ${inputClasses}`}
+                className={`flex-grow p-3 rounded-xl shadow-inner focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors duration-300 ${inputClasses}`}
                 placeholder="What needs to be done?"
                 value={newTodo}
                 onChange={(e) => setNewTodo(e.target.value)}
@@ -268,7 +140,7 @@
               />
               <button
                 onClick={handleAddTodo}
-                className="p-3 bg-green-500 hover:bg-green-600 text-white rounded-xl shadow-lg transition-transform transform hover:scale-105"
+                className="p-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-lg transition-transform transform hover:scale-105"
                 aria-label="Add new todo"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -278,12 +150,12 @@
             </div>
 
             {/* Todo list */}
-            <div className="space-y-4 max-h-96 overflow-y-auto pr-2 custom-scrollbar">
+            <div className="space-y-4 max-h-96 overflow-y-auto pr-2">
               {todos.length > 0 ? (
                 todos.map((todo) => (
                   <div
                     key={todo.id}
-                    className={`flex items-center p-4 rounded-xl shadow-md transition-all duration-300 border ${todoItemClasses} ${
+                    className={`flex items-center p-4 rounded-xl shadow-md transition-all duration-300 ${todoItemClasses} ${
                       todo.completed ? 'opacity-60' : ''
                     }`}
                   >
@@ -293,13 +165,13 @@
                         value={editingTodoText}
                         onChange={(e) => setEditingTodoText(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handleEditSave()}
-                        className={`flex-grow p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 border ${inputClasses}`}
+                        className={`flex-grow p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 ${inputClasses}`}
                         autoFocus
                       />
                     ) : (
                       <span
                         className={`flex-grow text-lg transition-all duration-300 ${
-                          todo.completed ? `line-through ${completedTextClasses}` : (theme === 'dark' ? 'text-gray-200' : 'text-gray-900')
+                          todo.completed ? `line-through ${completedTextClasses}` : (theme === 'dark' ? 'text-slate-200' : 'text-slate-900')
                         }`}
                       >
                         {todo.text}
@@ -323,7 +195,7 @@
                           <button
                             onClick={() => handleToggleTodo(todo.id, todo.completed)}
                             className={`p-2 rounded-full transition-transform transform hover:scale-110 ${
-                              todo.completed ? 'bg-green-500/50' : 'bg-green-500 hover:bg-green-600'
+                              todo.completed ? (theme === 'dark' ? 'bg-slate-700' : 'bg-slate-300') : 'bg-indigo-500 hover:bg-indigo-600'
                             }`}
                             aria-label="Toggle todo completion"
                           >
@@ -355,7 +227,7 @@
                   </div>
                 ))
               ) : (
-                <p className={`text-center ${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`}>No todos yet. Add one above!</p>
+                <p className={`text-center ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>No todos yet. Add one above!</p>
               )}
             </div>
           </div>
