@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Modern Todo App</title>
+  <title>Spotify-style Todo App</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
@@ -41,7 +41,7 @@
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
 </head>
-<body class="bg-slate-950">
+<body class="bg-gray-900">
   <div id="root"></div>
   <div id="particles-js"></div>
 
@@ -69,7 +69,7 @@
               }
             },
             "color": {
-              "value": "#ffffff"
+              "value": "#1DB954"
             },
             "shape": {
               "type": "circle"
@@ -91,7 +91,7 @@
             "line_linked": {
               "enable": true,
               "distance": 150,
-              "color": "#ffffff",
+              "color": "#1DB954",
               "opacity": 0.4,
               "width": 1
             },
@@ -195,34 +195,37 @@
       };
       
       const themeClasses = theme === 'dark'
-        ? 'bg-gradient-to-br from-slate-950 to-gray-900 text-white'
+        ? 'bg-gradient-to-br from-gray-900 to-black text-white'
         : 'bg-gradient-to-br from-gray-100 to-white text-gray-900';
       const containerClasses = theme === 'dark'
-        ? 'bg-slate-900 bg-opacity-80 border border-slate-800'
+        ? 'bg-gray-800 bg-opacity-80 border border-gray-700'
         : 'bg-white bg-opacity-80 border border-gray-200';
       const inputClasses = theme === 'dark'
-        ? 'bg-slate-800 text-white placeholder-slate-400 border-slate-700'
+        ? 'bg-gray-700 text-white placeholder-gray-400 border-gray-600'
         : 'bg-gray-100 text-gray-900 placeholder-gray-500 border-gray-300';
       const todoItemClasses = theme === 'dark'
-        ? 'bg-slate-800 border-slate-700'
+        ? 'bg-gray-700 border-gray-600'
         : 'bg-gray-100 border-gray-300';
       const completedTextClasses = theme === 'dark'
-        ? 'text-slate-500'
+        ? 'text-gray-500'
         : 'text-gray-400';
+      const musicButtonClasses = theme === 'dark'
+        ? 'bg-green-500 hover:bg-green-600 text-white border-green-500'
+        : 'bg-gray-200 hover:bg-gray-300 text-gray-900 border-gray-300';
       const themeButtonClasses = theme === 'dark'
-        ? 'bg-gray-800 text-white border-gray-700'
-        : 'bg-gray-200 text-gray-900 border-gray-300';
-      const buttonIconColor = theme === 'dark' ? 'text-white' : 'text-gray-900';
+        ? 'bg-gray-700 hover:bg-gray-600 text-white border-gray-600'
+        : 'bg-gray-200 hover:bg-gray-300 text-gray-900 border-gray-300';
+      const actionButtonColor = theme === 'dark' ? 'text-white' : 'text-gray-900';
 
       return (
         <div className={`min-h-screen ${themeClasses} flex flex-col items-center justify-center p-6 font-sans transition-colors duration-300`}>
           <div className={`${containerClasses} p-8 rounded-3xl shadow-2xl w-full max-w-xl flex flex-col`}>
             <div className="flex justify-between items-center mb-8">
-              <h1 className="text-4xl font-extrabold text-indigo-400 tracking-tight">Todo List</h1>
+              <h1 className="text-4xl font-extrabold text-white tracking-tight">Todo List</h1>
               <div className="flex space-x-2">
                 <button
                   onClick={handleToggleMusic}
-                  className={`p-3 rounded-full shadow-lg transition-transform transform hover:scale-105 ${themeButtonClasses} border`}
+                  className={`p-3 rounded-full shadow-lg transition-transform transform hover:scale-105 ${musicButtonClasses} border`}
                   aria-label="Toggle music"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
@@ -257,7 +260,7 @@
             <div className="flex items-center space-x-2 mb-6">
               <input
                 type="text"
-                className={`flex-grow p-3 rounded-xl shadow-inner focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors duration-300 border ${inputClasses}`}
+                className={`flex-grow p-3 rounded-xl shadow-inner focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors duration-300 border ${inputClasses}`}
                 placeholder="What needs to be done?"
                 value={newTodo}
                 onChange={(e) => setNewTodo(e.target.value)}
@@ -265,7 +268,7 @@
               />
               <button
                 onClick={handleAddTodo}
-                className="p-3 bg-indigo-500 hover:bg-indigo-600 text-white rounded-xl shadow-lg transition-transform transform hover:scale-105"
+                className="p-3 bg-green-500 hover:bg-green-600 text-white rounded-xl shadow-lg transition-transform transform hover:scale-105"
                 aria-label="Add new todo"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -290,13 +293,13 @@
                         value={editingTodoText}
                         onChange={(e) => setEditingTodoText(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handleEditSave()}
-                        className={`flex-grow p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 border ${inputClasses}`}
+                        className={`flex-grow p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 border ${inputClasses}`}
                         autoFocus
                       />
                     ) : (
                       <span
                         className={`flex-grow text-lg transition-all duration-300 ${
-                          todo.completed ? `line-through ${completedTextClasses}` : (theme === 'dark' ? 'text-slate-200' : 'text-gray-900')
+                          todo.completed ? `line-through ${completedTextClasses}` : (theme === 'dark' ? 'text-gray-200' : 'text-gray-900')
                         }`}
                       >
                         {todo.text}
@@ -308,7 +311,7 @@
                       {editingTodoId === todo.id ? (
                         <button
                           onClick={handleEditSave}
-                          className={`p-2 bg-green-500 hover:bg-green-600 rounded-full transition-transform transform hover:scale-110 ${buttonIconColor}`}
+                          className={`p-2 bg-green-500 hover:bg-green-600 rounded-full transition-transform transform hover:scale-110 ${actionButtonColor}`}
                           aria-label="Save todo edit"
                         >
                           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -320,7 +323,7 @@
                           <button
                             onClick={() => handleToggleTodo(todo.id, todo.completed)}
                             className={`p-2 rounded-full transition-transform transform hover:scale-110 ${
-                              todo.completed ? 'bg-indigo-500/50' : 'bg-indigo-500 hover:bg-indigo-600'
+                              todo.completed ? 'bg-green-500/50' : 'bg-green-500 hover:bg-green-600'
                             }`}
                             aria-label="Toggle todo completion"
                           >
@@ -330,7 +333,7 @@
                           </button>
                           <button
                             onClick={() => handleEditStart(todo)}
-                            className={`p-2 bg-yellow-500 hover:bg-yellow-600 rounded-full transition-transform transform hover:scale-110 ${buttonIconColor}`}
+                            className={`p-2 bg-yellow-500 hover:bg-yellow-600 rounded-full transition-transform transform hover:scale-110 ${actionButtonColor}`}
                             aria-label="Edit todo"
                           >
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -339,7 +342,7 @@
                           </button>
                           <button
                             onClick={() => handleDeleteTodo(todo.id)}
-                            className={`p-2 bg-red-500 hover:bg-red-600 rounded-full transition-transform transform hover:scale-110 ${buttonIconColor}`}
+                            className={`p-2 bg-red-500 hover:bg-red-600 rounded-full transition-transform transform hover:scale-110 ${actionButtonColor}`}
                             aria-label="Delete todo"
                           >
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -352,7 +355,7 @@
                   </div>
                 ))
               ) : (
-                <p className={`text-center ${theme === 'dark' ? 'text-slate-500' : 'text-gray-400'}`}>No todos yet. Add one above!</p>
+                <p className={`text-center ${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`}>No todos yet. Add one above!</p>
               )}
             </div>
           </div>
