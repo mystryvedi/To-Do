@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Modern Todo App</title>
+  <title>To Do App</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
@@ -12,135 +12,371 @@
     body {
       font-family: 'Inter', sans-serif;
     }
-    .frosted-glass {
-      background: rgba(255, 255, 255, 0.1);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      border: 1px solid rgba(255, 255, 255, 0.2);
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 8px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.1);
+      border-radius: 10px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 10px;
+      transition: background 0.3s ease;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: rgba(0, 0, 0, 0.5);
+    }
+    #particles-js {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      z-index: -1;
     }
   </style>
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+  <!-- Firebase Imports -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, setDoc, query, where, getDocs, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    window.firebase = {
+      initializeApp,
+      getAuth,
+      signInAnonymously,
+      signInWithCustomToken,
+      getFirestore,
+      collection,
+      onSnapshot,
+      addDoc,
+      updateDoc,
+      deleteDoc,
+      doc,
+      setDoc,
+      query,
+      where,
+      getDocs,
+      getDoc,
+    };
+  </script>
 </head>
-<body class="bg-slate-950">
+<body class="bg-gray-900">
   <div id="root"></div>
+  <div id="particles-js"></div>
 
   <script type="text/babel">
-    const { useState, useEffect } = React;
-    
-    // The main App component containing all the logic and UI
-    const App = () => {
-      // State for managing todos and new todo input
-      const [todos, setTodos] = useState([]);
-      const [newTodo, setNewTodo] = useState('');
-      const [editingTodoId, setEditingTodoId] = useState(null);
-      const [editingTodoText, setEditingTodoText] = useState('');
-      const [theme, setTheme] = useState('dark');
+    const { useState, useEffect, useRef } = React;
+    const { initializeApp, getAuth, signInAnonymously, signInWithCustomToken, getFirestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, setDoc, query, where, getDocs, getDoc } = window.firebase;
 
-      // Function to toggle between dark and light themes
+    // Firebase configuration and initialization
+    const __app_id = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+    const __firebase_config = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+    const __initial_auth_token = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+    const firebaseConfig = __firebase_config;
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    const App = () => {
+      const audioRef = useRef(null);
+      const [newTodo, setNewTodo] = useState('');
+      const [tasks, setTasks] = useState([]);
+      const [editingTaskId, setEditingTaskId] = useState(null);
+      const [editingTaskText, setEditingTaskText] = useState('');
+      const [theme, setTheme] = useState('dark');
+      const [isPlaying, setIsPlaying] = useState(false);
+      const [user, setUser] = useState(null);
+      const [isAuthReady, setIsAuthReady] = useState(false);
+      const [publicId, setPublicId] = useState('');
+      const [isPublic, setIsPublic] = useState(false);
+      const [showModal, setShowModal] = useState(false);
+      const [modalMessage, setModalMessage] = useState('');
+
+      const columns = [
+        { id: 'new', title: 'New', color: 'bg-blue-500' },
+        { id: 'in_progress', title: 'In Progress', color: 'bg-yellow-500' },
+        { id: 'completed', title: 'Completed', color: 'bg-green-500' }
+      ];
+
+      useEffect(() => {
+        particlesJS('particles-js', {
+          "particles": {
+            "number": { "value": 80, "density": { "enable": true, "value_area": 800 } },
+            "color": { "value": "#1DB954" },
+            "shape": { "type": "circle" },
+            "opacity": { "value": 0.5, "random": false, "anim": { "enable": false } },
+            "size": { "value": 3, "random": true, "anim": { "enable": false } },
+            "line_linked": { "enable": true, "distance": 150, "color": "#1DB954", "opacity": 0.4, "width": 1 },
+            "move": { "enable": true, "speed": 2, "direction": "none", "random": false, "straight": false, "out_mode": "out", "bounce": false, "attract": { "enable": false, "rotateX": 600, "rotateY": 1200 } }
+          },
+          "interactivity": {
+            "detect_on": "canvas",
+            "events": { "onhover": { "enable": true, "mode": "grab" }, "onclick": { "enable": true, "mode": "push" }, "resize": true },
+            "modes": { "grab": { "distance": 140, "line_linked": { "opacity": 1 } }, "push": { "particles_nb": 4 } }
+          },
+          "retina_detect": true
+        });
+
+        const initializeAuth = async () => {
+          try {
+            if (__initial_auth_token) {
+              await signInWithCustomToken(auth, __initial_auth_token);
+            } else {
+              await signInAnonymously(auth);
+            }
+            setUser(auth.currentUser);
+            setIsAuthReady(true);
+          } catch (e) {
+            console.error("Auth initialization failed:", e);
+            setModalMessage("Error: Could not authenticate. Please check console for details.");
+            setShowModal(true);
+          }
+        };
+
+        if (!user) {
+          initializeAuth();
+        }
+      }, []);
+
+      useEffect(() => {
+        if (!isAuthReady || !user) return;
+
+        const collectionPath = isPublic 
+          ? `artifacts/${__app_id}/public/data/kanban_tasks`
+          : `artifacts/${__app_id}/users/${user.uid}/kanban_tasks`;
+        
+        const q = collection(db, collectionPath);
+
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+          const fetchedTasks = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }));
+          setTasks(fetchedTasks);
+        }, (error) => {
+          console.error("Error fetching tasks: ", error);
+          setModalMessage("Error: Could not load tasks from database. Please check console for details.");
+          setShowModal(true);
+        });
+
+        return () => unsubscribe();
+      }, [isAuthReady, user, isPublic]);
+
       const toggleTheme = () => {
         setTheme(theme === 'dark' ? 'light' : 'dark');
       };
 
-      // Function to add a new todo
-      const handleAddTodo = () => {
+      const handleToggleMusic = () => {
+        if (isPlaying) {
+          audioRef.current.pause();
+        } else {
+          audioRef.current.play();
+        }
+        setIsPlaying(!isPlaying);
+      };
+
+      const handleAddTodo = async () => {
         if (newTodo.trim() === '') return;
-        setTodos([...todos, { id: Date.now(), text: newTodo, completed: false }]);
-        setNewTodo('');
+        if (!user) {
+            setModalMessage("Error: User not authenticated. Cannot add tasks.");
+            setShowModal(true);
+            return;
+        }
+        try {
+          const collectionPath = isPublic 
+            ? `artifacts/${__app_id}/public/data/kanban_tasks`
+            : `artifacts/${__app_id}/users/${user.uid}/kanban_tasks`;
+          await addDoc(collection(db, collectionPath), {
+            text: newTodo,
+            status: 'new',
+            createdAt: Date.now(),
+          });
+          setNewTodo('');
+        } catch (e) {
+          console.error("Error adding document: ", e);
+          setModalMessage("Error: Could not add task. Please check console for details.");
+          setShowModal(true);
+        }
       };
 
-      // Function to toggle a todo's completion status
-      const handleToggleTodo = (id) => {
-        setTodos(
-          todos.map((todo) =>
-            todo.id === id ? { ...todo, completed: !todo.completed } : todo
-          )
-        );
+      const handleUpdateTask = async (id, newStatus) => {
+        if (!user) {
+            setModalMessage("Error: User not authenticated. Cannot update tasks.");
+            setShowModal(true);
+            return;
+        }
+        try {
+          const docPath = isPublic
+            ? `artifacts/${__app_id}/public/data/kanban_tasks/${id}`
+            : `artifacts/${__app_id}/users/${user.uid}/kanban_tasks/${id}`;
+          await updateDoc(doc(db, docPath), { status: newStatus });
+        } catch (e) {
+          console.error("Error updating document: ", e);
+          setModalMessage("Error: Could not update task status. Please check console for details.");
+          setShowModal(true);
+        }
       };
 
-      // Function to delete a todo
-      const handleDeleteTodo = (id) => {
-        setTodos(todos.filter((todo) => todo.id !== id));
+      const handleDeleteTodo = async (id) => {
+        if (!user) {
+            setModalMessage("Error: User not authenticated. Cannot delete tasks.");
+            setShowModal(true);
+            return;
+        }
+        try {
+          const docPath = isPublic
+            ? `artifacts/${__app_id}/public/data/kanban_tasks/${id}`
+            : `artifacts/${__app_id}/users/${user.uid}/kanban_tasks/${id}`;
+          await deleteDoc(doc(db, docPath));
+        } catch (e) {
+          console.error("Error deleting document: ", e);
+          setModalMessage("Error: Could not delete task. Please check console for details.");
+          setShowModal(true);
+        }
       };
 
-      // Function to start editing a todo
-      const handleEditStart = (todo) => {
-        setEditingTodoId(todo.id);
-        setEditingTodoText(todo.text);
+      const handleEditStart = (task) => {
+        setEditingTaskId(task.id);
+        setEditingTaskText(task.text);
       };
 
-      // Function to save the edited todo
-      const handleEditSave = () => {
-        if (editingTodoText.trim() === '') {
-          setEditingTodoId(null);
+      const handleEditSave = async () => {
+        if (editingTaskText.trim() === '') {
+          setEditingTaskId(null);
           return;
         }
-        setTodos(
-          todos.map((todo) =>
-            todo.id === editingTodoId ? { ...todo, text: editingTodoText } : todo
-          )
-        );
-        setEditingTodoId(null);
+        if (!user) {
+            setModalMessage("Error: User not authenticated. Cannot save edits.");
+            setShowModal(true);
+            return;
+        }
+        try {
+          const docPath = isPublic
+            ? `artifacts/${__app_id}/public/data/kanban_tasks/${editingTaskId}`
+            : `artifacts/${__app_id}/users/${user.uid}/kanban_tasks/${editingTaskId}`;
+          await updateDoc(doc(db, docPath), { text: editingTaskText });
+          setEditingTaskId(null);
+        } catch (e) {
+          console.error("Error saving edits: ", e);
+          setModalMessage("Error: Could not save edits. Please check console for details.");
+          setShowModal(true);
+        }
       };
-      
+
+      const handlePublicSwitch = async () => {
+        if (!user) {
+            setModalMessage("Error: User not authenticated. Cannot switch to public mode.");
+            setShowModal(true);
+            return;
+        }
+        const newIsPublic = !isPublic;
+        setIsPublic(newIsPublic);
+        setModalMessage(`Switched to ${newIsPublic ? 'public' : 'private'} mode. Tasks will now be ${newIsPublic ? 'shared' : 'private'}.`);
+        setShowModal(true);
+      };
+
       const themeClasses = theme === 'dark'
-        ? 'bg-slate-950 text-white'
-        : 'bg-slate-100 text-slate-900';
+        ? 'bg-gradient-to-br from-gray-900 to-black text-white'
+        : 'bg-gradient-to-br from-gray-100 to-white text-gray-900';
       const containerClasses = theme === 'dark'
-        ? 'frosted-glass'
-        : 'bg-white shadow-xl';
+        ? 'bg-gray-800 bg-opacity-80 border border-gray-700'
+        : 'bg-white bg-opacity-80 border border-gray-200';
       const inputClasses = theme === 'dark'
-        ? 'bg-slate-800 text-white placeholder-slate-400 border border-slate-700'
-        : 'bg-slate-200 text-slate-900 placeholder-slate-500 border border-slate-300';
-      const todoItemClasses = theme === 'dark'
-        ? 'bg-slate-800 border border-slate-700'
-        : 'bg-slate-100 border border-slate-300';
+        ? 'bg-gray-700 text-white placeholder-gray-400 border-gray-600'
+        : 'bg-gray-100 text-gray-900 placeholder-gray-500 border-gray-300';
+      const taskItemClasses = theme === 'dark'
+        ? 'bg-gray-700 border-gray-600'
+        : 'bg-gray-100 border-gray-300';
       const completedTextClasses = theme === 'dark'
-        ? 'text-slate-500'
-        : 'text-slate-400';
+        ? 'text-gray-500'
+        : 'text-gray-400';
+      const musicButtonClasses = theme === 'dark'
+        ? 'bg-green-500 hover:bg-green-600 text-white border-green-500'
+        : 'bg-gray-200 hover:bg-gray-300 text-gray-900 border-gray-300';
       const themeButtonClasses = theme === 'dark'
-        ? 'bg-indigo-600 text-white hover:bg-indigo-700'
-        : 'bg-slate-800 text-white hover:bg-slate-900';
-      const actionButtonColor = theme === 'dark'
-        ? 'text-white'
-        : 'text-slate-900';
+        ? 'bg-gray-700 hover:bg-gray-600 text-white border-gray-600'
+        : 'bg-gray-200 hover:bg-gray-300 text-gray-900 border-gray-300';
+      const actionButtonColor = theme === 'dark' ? 'text-white' : 'text-gray-900';
+      const modalClasses = theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-900';
+      const publicButtonClasses = isPublic ? 'bg-red-500 hover:bg-red-600 text-white' : 'bg-gray-600 hover:bg-gray-700 text-white';
 
       return (
-        <div className={`min-h-screen ${themeClasses} flex flex-col items-center justify-center p-4 font-sans transition-colors duration-300`}>
-          <div className={`${containerClasses} p-8 rounded-2xl shadow-lg w-full max-w-xl flex flex-col`}>
-            <div className="flex justify-between items-center mb-6">
-              <h1 className="text-4xl font-extrabold text-indigo-400">Todo List</h1>
-              <button
-                onClick={toggleTheme}
-                className={`p-3 rounded-full transition-transform transform hover:scale-105 ${themeButtonClasses}`}
-                aria-label="Toggle dark/light mode"
-              >
-                {theme === 'dark' ? (
+        <div className={`min-h-screen ${themeClasses} flex flex-col items-center justify-center p-6 font-sans transition-colors duration-300`}>
+          <div className={`${containerClasses} p-8 rounded-3xl shadow-2xl w-full max-w-5xl flex flex-col`}>
+            <div className="flex justify-between items-center mb-8">
+              <h1 className="text-4xl font-extrabold text-white tracking-tight">Kanban Board</h1>
+              <div className="flex space-x-2">
+                <button
+                  onClick={handleToggleMusic}
+                  className={`p-3 rounded-full shadow-lg transition-transform transform hover:scale-105 ${musicButtonClasses} border`}
+                  aria-label="Toggle music"
+                >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 2.25a.75.75 0 01.75.75v2.25a.75.75 0 01-1.5 0V3a.75.75 0 01.75-.75zM7.5 12a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM18.894 6.106a.75.75 0 00-1.06-.068l-1.748 1.49a.75.75 0 00.99 1.163l1.749-1.49a.75.75 0 00.069-1.06zM6.106 18.894a.75.75 0 001.06.069l1.749-1.49a.75.75 0 00-.99-1.163L6.044 17.834a.75.75 0 00-.069 1.06zM12 15.75a.75.75 0 01.75.75v2.25a.75.75 0 01-1.5 0V16.5a.75.75 0 01.75-.75zM12 6a.75.75 0 01.75.75V9a.75.75 0 01-1.5 0V6.75a.75.75 0 01.75-.75zM3 12a.75.75 0 01.75-.75H6a.75.75 0 010 1.5H3.75A.75.75 0 013 12zM18 12a.75.75 0 01.75-.75h2.25a.75.75 0 010 1.5H18.75A.75.75 0 0118 12zM5.106 5.106a.75.75 0 00-.068 1.06l1.49 1.749a.75.75 0 001.163-.99L6.174 5.044a.75.75 0 00-1.06-.069zM18.894 18.894a.75.75 0 00-.069-1.06l-1.49-1.748a.75.75 0 00-1.163.99l1.49 1.749a.75.75 0 001.06.069z" />
+                    {isPlaying ? (
+                      <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+                    ) : (
+                      <path d="M8 5v14l11-7z"/>
+                    )}
                   </svg>
-                ) : (
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
-                    <path fillRule="evenodd" d="M9.528 1.718a.75.75 0 01.162.836A10.025 10.025 0 008.25 12a10.025 10.025 0 001.44 7.446.75.75 0 11-1.155.964A11.524 11.524 0 018.25 12c0-2.278.583-4.444 1.66-6.335a.75.75 0 01.963-.162zm2.14 9.177a.75.75 0 01.03.957 8.948 8.948 0 001.018 1.638A.75.75 0 0112.75 14a.75.75 0 01-1.171-.914 7.447 7.447 0 01.834-1.343.75.75 0 01.815-.175zm2.844-3.5a.75.75 0 01.026.972 6.444 6.444 0 001.378 1.455.75.75 0 01.077 1.107.75.75 0 01-1.108.078 7.948 7.948 0 01-1.688-1.785.75.75 0 011.023-.927zM20.25 12a8.25 8.25 0 11-16.486-.819.75.75 0 011.16-.949A6.75 6.75 0 0021.75 12a6.75 6.75 0 00-11.233-5.266.75.75 0 01.071-1.11z" clipRule="evenodd" />
-                  </svg>
-                )}
-              </button>
+                </button>
+                <button
+                  onClick={toggleTheme}
+                  className={`p-3 rounded-full shadow-lg transition-transform transform hover:scale-105 ${themeButtonClasses} border`}
+                  aria-label="Toggle dark/light mode"
+                >
+                  {theme === 'dark' ? (
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12 2.25a.75.75 0 01.75.75v2.25a.75.75 0 01-1.5 0V3a.75.75 0 01.75-.75zM7.5 12a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM18.894 6.106a.75.75 0 00-1.06-.068l-1.748 1.49a.75.75 0 00.99 1.163l1.749-1.49a.75.75 0 00.069-1.06zM6.106 18.894a.75.75 0 001.06.069l1.749-1.49a.75.75 0 00-.99-1.163L6.044 17.834a.75.75 0 00-.069 1.06zM12 15.75a.75.75 0 01.75.75v2.25a.75.75 0 01-1.5 0V16.5a.75.75 0 01.75-.75zM12 6a.75.75 0 01.75.75V9a.75.75 0 01-1.5 0V6.75a.75.75 0 01.75-.75zM3 12a.75.75 0 01.75-.75H6a.75.75 0 010 1.5H3.75A.75.75 0 013 12zM18 12a.75.75 0 01.75-.75h2.25a.75.75 0 010 1.5H18.75A.75.75 0 0118 12zM5.106 5.106a.75.75 0 00-.068 1.06l1.49 1.749a.75.75 0 001.163-.99L6.174 5.044a.75.75 0 00-1.06-.069zM18.894 18.894a.75.75 0 00-.069-1.06l-1.49-1.748a.75.75 0 00-1.163.99l1.49 1.749a.75.75 0 001.06.069z" />
+                    </svg>
+                  ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
+                      <path fillRule="evenodd" d="M9.528 1.718a.75.75 0 01.162.836A10.025 10.025 0 008.25 12a10.025 10.025 0 001.44 7.446.75.75 0 11-1.155.964A11.524 11.524 0 018.25 12c0-2.278.583-4.444 1.66-6.335a.75.75 0 01.963-.162zm2.14 9.177a.75.75 0 01.03.957 8.948 8.948 0 001.018 1.638A.75.75 0 0112.75 14a.75.75 0 01-1.171-.914 7.447 7.447 0 01.834-1.343.75.75 0 01.815-.175zm2.844-3.5a.75.75 0 01.026.972 6.444 6.444 0 001.378 1.455.75.75 0 01.077 1.107.75.75 0 01-1.108.078 7.948 7.948 0 01-1.688-1.785.75.75 0 011.023-.927zM20.25 12a8.25 8.25 0 11-16.486-.819.75.75 0 011.16-.949A6.75 6.75 0 0021.75 12a6.75 6.75 0 00-11.233-5.266.75.75 0 01.071-1.11z" clipRule="evenodd" />
+                    </svg>
+                  )}
+                </button>
+              </div>
             </div>
             
-            {/* Input for new todos */}
+            <audio ref={audioRef} loop src="https://www.learningcontainer.com/wp-content/uploads/2020/02/Kalimba.mp3"></audio>
+            
+            {user && (
+                <div className="flex justify-between items-center mb-4">
+                  <p className="text-sm text-gray-400 truncate">
+                    User ID: {user.uid}
+                  </p>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm text-gray-400">Public Mode</span>
+                    <button
+                      onClick={handlePublicSwitch}
+                      className={`${publicButtonClasses} p-2 rounded-full transition-colors duration-300`}
+                    >
+                      {isPublic ? 'On' : 'Off'}
+                    </button>
+                  </div>
+                </div>
+            )}
+
+            {/* Input for new tasks */}
             <div className="flex items-center space-x-2 mb-6">
               <input
                 type="text"
-                className={`flex-grow p-3 rounded-xl shadow-inner focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors duration-300 ${inputClasses}`}
-                placeholder="What needs to be done?"
+                className={`flex-grow p-3 rounded-xl shadow-inner focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors duration-300 border ${inputClasses}`}
+                placeholder="Add a new task..."
                 value={newTodo}
                 onChange={(e) => setNewTodo(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleAddTodo()}
               />
               <button
                 onClick={handleAddTodo}
-                className="p-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-lg transition-transform transform hover:scale-105"
+                className="p-3 bg-green-500 hover:bg-green-600 text-white rounded-xl shadow-lg transition-transform transform hover:scale-105"
                 aria-label="Add new todo"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -149,88 +385,109 @@
               </button>
             </div>
 
-            {/* Todo list */}
-            <div className="space-y-4 max-h-96 overflow-y-auto pr-2">
-              {todos.length > 0 ? (
-                todos.map((todo) => (
-                  <div
-                    key={todo.id}
-                    className={`flex items-center p-4 rounded-xl shadow-md transition-all duration-300 ${todoItemClasses} ${
-                      todo.completed ? 'opacity-60' : ''
-                    }`}
-                  >
-                    {editingTodoId === todo.id ? (
-                      <input
-                        type="text"
-                        value={editingTodoText}
-                        onChange={(e) => setEditingTodoText(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && handleEditSave()}
-                        className={`flex-grow p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 ${inputClasses}`}
-                        autoFocus
-                      />
-                    ) : (
-                      <span
-                        className={`flex-grow text-lg transition-all duration-300 ${
-                          todo.completed ? `line-through ${completedTextClasses}` : (theme === 'dark' ? 'text-slate-200' : 'text-slate-900')
-                        }`}
-                      >
-                        {todo.text}
-                      </span>
-                    )}
-
-                    {/* Action buttons */}
-                    <div className="flex items-center space-x-2 ml-4">
-                      {editingTodoId === todo.id ? (
-                        <button
-                          onClick={handleEditSave}
-                          className={`p-2 bg-green-500 hover:bg-green-600 rounded-full transition-transform transform hover:scale-110 ${actionButtonColor}`}
-                          aria-label="Save todo edit"
+            {/* Kanban Board */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {columns.map(column => (
+                <div key={column.id} className={`${containerClasses} p-4 rounded-xl shadow-inner`}>
+                  <h2 className={`text-xl font-bold mb-4 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>{column.title}</h2>
+                  <div className="space-y-4 max-h-96 overflow-y-auto pr-2 custom-scrollbar">
+                    {tasks.filter(task => task.status === column.id).length > 0 ? (
+                      tasks.filter(task => task.status === column.id).map(task => (
+                        <div
+                          key={task.id}
+                          className={`flex items-center p-4 rounded-xl shadow-md transition-all duration-300 border ${taskItemClasses} ${
+                            task.status === 'completed' ? 'opacity-60' : ''
+                          }`}
                         >
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                          </svg>
-                        </button>
-                      ) : (
-                        <>
-                          <button
-                            onClick={() => handleToggleTodo(todo.id, todo.completed)}
-                            className={`p-2 rounded-full transition-transform transform hover:scale-110 ${
-                              todo.completed ? (theme === 'dark' ? 'bg-slate-700' : 'bg-slate-300') : 'bg-indigo-500 hover:bg-indigo-600'
-                            }`}
-                            aria-label="Toggle todo completion"
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" viewBox="0 0 20 20" fill="currentColor">
-                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4a1 1 0 000-1.414z" clipRule="evenodd" />
-                            </svg>
-                          </button>
-                          <button
-                            onClick={() => handleEditStart(todo)}
-                            className={`p-2 bg-yellow-500 hover:bg-yellow-600 rounded-full transition-transform transform hover:scale-110 ${actionButtonColor}`}
-                            aria-label="Edit todo"
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                              <path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828zM15 11l-2 2h-4v-4l2-2 4 4z" />
-                            </svg>
-                          </button>
-                          <button
-                            onClick={() => handleDeleteTodo(todo.id)}
-                            className={`p-2 bg-red-500 hover:bg-red-600 rounded-full transition-transform transform hover:scale-110 ${actionButtonColor}`}
-                            aria-label="Delete todo"
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                              <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-                            </svg>
-                          </button>
-                        </>
-                      )}
-                    </div>
+                          {editingTaskId === task.id ? (
+                            <input
+                              type="text"
+                              value={editingTaskText}
+                              onChange={(e) => setEditingTaskText(e.target.value)}
+                              onKeyDown={(e) => e.key === 'Enter' && handleEditSave()}
+                              className={`flex-grow p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 border ${inputClasses}`}
+                              autoFocus
+                            />
+                          ) : (
+                            <span
+                              className={`flex-grow text-lg transition-all duration-300 ${
+                                task.status === 'completed' ? `line-through ${completedTextClasses}` : (theme === 'dark' ? 'text-gray-200' : 'text-gray-900')
+                              }`}
+                            >
+                              {task.text}
+                            </span>
+                          )}
+
+                          {/* Action buttons */}
+                          <div className="flex items-center space-x-2 ml-4">
+                            {editingTaskId === task.id ? (
+                              <button
+                                onClick={handleEditSave}
+                                className={`p-2 bg-green-500 hover:bg-green-600 rounded-full transition-transform transform hover:scale-110 ${actionButtonColor}`}
+                                aria-label="Save task edit"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                </svg>
+                              </button>
+                            ) : (
+                              <>
+                                {column.id !== 'completed' && (
+                                  <button
+                                    onClick={() => handleUpdateTask(task.id, 'completed')}
+                                    className={`p-2 rounded-full transition-transform transform hover:scale-110 bg-green-500 hover:bg-green-600`}
+                                    aria-label="Move to completed"
+                                  >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" viewBox="0 0 20 20" fill="currentColor">
+                                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4a1 1 0 000-1.414z" clipRule="evenodd" />
+                                    </svg>
+                                  </button>
+                                )}
+                                <button
+                                  onClick={() => handleEditStart(task)}
+                                  className={`p-2 bg-yellow-500 hover:bg-yellow-600 rounded-full transition-transform transform hover:scale-110 ${actionButtonColor}`}
+                                  aria-label="Edit task"
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                    <path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828zM15 11l-2 2h-4v-4l2-2 4 4z" />
+                                  </svg>
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteTodo(task.id)}
+                                  className={`p-2 bg-red-500 hover:bg-red-600 rounded-full transition-transform transform hover:scale-110 ${actionButtonColor}`}
+                                  aria-label="Delete task"
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                                  </svg>
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <p className={`text-center ${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`}>No tasks yet.</p>
+                    )}
                   </div>
-                ))
-              ) : (
-                <p className={`text-center ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>No todos yet. Add one above!</p>
-              )}
+                </div>
+              ))}
             </div>
           </div>
+          {/* Modal for messages */}
+          {showModal && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+              <div className={`${modalClasses} p-6 rounded-lg shadow-lg max-w-sm w-full text-center`}>
+                <p className="mb-4">{modalMessage}</p>
+                <button
+                  onClick={() => setShowModal(false)}
+                  className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
+                >
+                  OK
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       );
     };
