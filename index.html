@@ -27,29 +27,130 @@
     .custom-scrollbar::-webkit-scrollbar-thumb:hover {
       background: rgba(0, 0, 0, 0.5);
     }
+    #particles-js {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      z-index: -1;
+    }
   </style>
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
 </head>
 <body class="bg-slate-950">
   <div id="root"></div>
+  <div id="particles-js"></div>
 
   <script type="text/babel">
-    const { useState, useEffect } = React;
+    const { useState, useEffect, useRef } = React;
     
     // The main App component containing all the logic and UI
     const App = () => {
-      // State for managing todos and new todo input
+      const audioRef = useRef(null);
       const [todos, setTodos] = useState([]);
       const [newTodo, setNewTodo] = useState('');
       const [editingTodoId, setEditingTodoId] = useState(null);
       const [editingTodoText, setEditingTodoText] = useState('');
       const [theme, setTheme] = useState('dark');
+      const [isPlaying, setIsPlaying] = useState(false);
+
+      useEffect(() => {
+        particlesJS('particles-js', {
+          "particles": {
+            "number": {
+              "value": 80,
+              "density": {
+                "enable": true,
+                "value_area": 800
+              }
+            },
+            "color": {
+              "value": "#ffffff"
+            },
+            "shape": {
+              "type": "circle"
+            },
+            "opacity": {
+              "value": 0.5,
+              "random": false,
+              "anim": {
+                "enable": false
+              }
+            },
+            "size": {
+              "value": 3,
+              "random": true,
+              "anim": {
+                "enable": false
+              }
+            },
+            "line_linked": {
+              "enable": true,
+              "distance": 150,
+              "color": "#ffffff",
+              "opacity": 0.4,
+              "width": 1
+            },
+            "move": {
+              "enable": true,
+              "speed": 2,
+              "direction": "none",
+              "random": false,
+              "straight": false,
+              "out_mode": "out",
+              "bounce": false,
+              "attract": {
+                "enable": false,
+                "rotateX": 600,
+                "rotateY": 1200
+              }
+            }
+          },
+          "interactivity": {
+            "detect_on": "canvas",
+            "events": {
+              "onhover": {
+                "enable": true,
+                "mode": "grab"
+              },
+              "onclick": {
+                "enable": true,
+                "mode": "push"
+              },
+              "resize": true
+            },
+            "modes": {
+              "grab": {
+                "distance": 140,
+                "line_linked": {
+                  "opacity": 1
+                }
+              },
+              "push": {
+                "particles_nb": 4
+              }
+            }
+          },
+          "retina_detect": true
+        });
+      }, []);
 
       // Function to toggle between dark and light themes
       const toggleTheme = () => {
         setTheme(theme === 'dark' ? 'light' : 'dark');
+      };
+
+      const handleToggleMusic = () => {
+        if (isPlaying) {
+          audioRef.current.pause();
+        } else {
+          audioRef.current.play();
+        }
+        setIsPlaying(!isPlaying);
       };
 
       // Function to add a new todo
@@ -97,8 +198,8 @@
         ? 'bg-gradient-to-br from-slate-950 to-gray-900 text-white'
         : 'bg-gradient-to-br from-gray-100 to-white text-gray-900';
       const containerClasses = theme === 'dark'
-        ? 'bg-slate-900 border border-slate-800'
-        : 'bg-white border border-gray-200';
+        ? 'bg-slate-900 bg-opacity-80 border border-slate-800'
+        : 'bg-white bg-opacity-80 border border-gray-200';
       const inputClasses = theme === 'dark'
         ? 'bg-slate-800 text-white placeholder-slate-400 border-slate-700'
         : 'bg-gray-100 text-gray-900 placeholder-gray-500 border-gray-300';
@@ -118,23 +219,40 @@
           <div className={`${containerClasses} p-8 rounded-3xl shadow-2xl w-full max-w-xl flex flex-col`}>
             <div className="flex justify-between items-center mb-8">
               <h1 className="text-4xl font-extrabold text-indigo-400 tracking-tight">Todo List</h1>
-              <button
-                onClick={toggleTheme}
-                className={`p-3 rounded-full shadow-lg transition-transform transform hover:scale-105 ${themeButtonClasses} border`}
-                aria-label="Toggle dark/light mode"
-              >
-                {theme === 'dark' ? (
+              <div className="flex space-x-2">
+                <button
+                  onClick={handleToggleMusic}
+                  className={`p-3 rounded-full shadow-lg transition-transform transform hover:scale-105 ${themeButtonClasses} border`}
+                  aria-label="Toggle music"
+                >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 2.25a.75.75 0 01.75.75v2.25a.75.75 0 01-1.5 0V3a.75.75 0 01.75-.75zM7.5 12a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM18.894 6.106a.75.75 0 00-1.06-.068l-1.748 1.49a.75.75 0 00.99 1.163l1.749-1.49a.75.75 0 00.069-1.06zM6.106 18.894a.75.75 0 001.06.069l1.749-1.49a.75.75 0 00-.99-1.163L6.044 17.834a.75.75 0 00-.069 1.06zM12 15.75a.75.75 0 01.75.75v2.25a.75.75 0 01-1.5 0V16.5a.75.75 0 01.75-.75zM12 6a.75.75 0 01.75.75V9a.75.75 0 01-1.5 0V6.75a.75.75 0 01.75-.75zM3 12a.75.75 0 01.75-.75H6a.75.75 0 010 1.5H3.75A.75.75 0 013 12zM18 12a.75.75 0 01.75-.75h2.25a.75.75 0 010 1.5H18.75A.75.75 0 0118 12zM5.106 5.106a.75.75 0 00-.068 1.06l1.49 1.749a.75.75 0 001.163-.99L6.174 5.044a.75.75 0 00-1.06-.069zM18.894 18.894a.75.75 0 00-.069-1.06l-1.49-1.748a.75.75 0 00-1.163.99l1.49 1.749a.75.75 0 001.06.069z" />
+                    {isPlaying ? (
+                      <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+                    ) : (
+                      <path d="M8 5v14l11-7z"/>
+                    )}
                   </svg>
-                ) : (
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
-                    <path fillRule="evenodd" d="M9.528 1.718a.75.75 0 01.162.836A10.025 10.025 0 008.25 12a10.025 10.025 0 001.44 7.446.75.75 0 11-1.155.964A11.524 11.524 0 018.25 12c0-2.278.583-4.444 1.66-6.335a.75.75 0 01.963-.162zm2.14 9.177a.75.75 0 01.03.957 8.948 8.948 0 001.018 1.638A.75.75 0 0112.75 14a.75.75 0 01-1.171-.914 7.447 7.447 0 01.834-1.343.75.75 0 01.815-.175zm2.844-3.5a.75.75 0 01.026.972 6.444 6.444 0 001.378 1.455.75.75 0 01.077 1.107.75.75 0 01-1.108.078 7.948 7.948 0 01-1.688-1.785.75.75 0 011.023-.927zM20.25 12a8.25 8.25 0 11-16.486-.819.75.75 0 011.16-.949A6.75 6.75 0 0021.75 12a6.75 6.75 0 00-11.233-5.266.75.75 0 01.071-1.11z" clipRule="evenodd" />
-                  </svg>
-                )}
-              </button>
+                </button>
+                <button
+                  onClick={toggleTheme}
+                  className={`p-3 rounded-full shadow-lg transition-transform transform hover:scale-105 ${themeButtonClasses} border`}
+                  aria-label="Toggle dark/light mode"
+                >
+                  {theme === 'dark' ? (
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12 2.25a.75.75 0 01.75.75v2.25a.75.75 0 01-1.5 0V3a.75.75 0 01.75-.75zM7.5 12a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM18.894 6.106a.75.75 0 00-1.06-.068l-1.748 1.49a.75.75 0 00.99 1.163l1.749-1.49a.75.75 0 00.069-1.06zM6.106 18.894a.75.75 0 001.06.069l1.749-1.49a.75.75 0 00-.99-1.163L6.044 17.834a.75.75 0 00-.069 1.06zM12 15.75a.75.75 0 01.75.75v2.25a.75.75 0 01-1.5 0V16.5a.75.75 0 01.75-.75zM12 6a.75.75 0 01.75.75V9a.75.75 0 01-1.5 0V6.75a.75.75 0 01.75-.75zM3 12a.75.75 0 01.75-.75H6a.75.75 0 010 1.5H3.75A.75.75 0 013 12zM18 12a.75.75 0 01.75-.75h2.25a.75.75 0 010 1.5H18.75A.75.75 0 0118 12zM5.106 5.106a.75.75 0 00-.068 1.06l1.49 1.749a.75.75 0 001.163-.99L6.174 5.044a.75.75 0 00-1.06-.069zM18.894 18.894a.75.75 0 00-.069-1.06l-1.49-1.748a.75.75 0 00-1.163.99l1.49 1.749a.75.75 0 001.06.069z" />
+                    </svg>
+                  ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
+                      <path fillRule="evenodd" d="M9.528 1.718a.75.75 0 01.162.836A10.025 10.025 0 008.25 12a10.025 10.025 0 001.44 7.446.75.75 0 11-1.155.964A11.524 11.524 0 018.25 12c0-2.278.583-4.444 1.66-6.335a.75.75 0 01.963-.162zm2.14 9.177a.75.75 0 01.03.957 8.948 8.948 0 001.018 1.638A.75.75 0 0112.75 14a.75.75 0 01-1.171-.914 7.447 7.447 0 01.834-1.343.75.75 0 01.815-.175zm2.844-3.5a.75.75 0 01.026.972 6.444 6.444 0 001.378 1.455.75.75 0 01.077 1.107.75.75 0 01-1.108.078 7.948 7.948 0 01-1.688-1.785.75.75 0 011.023-.927zM20.25 12a8.25 8.25 0 11-16.486-.819.75.75 0 011.16-.949A6.75 6.75 0 0021.75 12a6.75 6.75 0 00-11.233-5.266.75.75 0 01.071-1.11z" clipRule="evenodd" />
+                    </svg>
+                  )}
+                </button>
+              </div>
             </div>
             
+            <audio ref={audioRef} loop src="https://www.learningcontainer.com/wp-content/uploads/2020/02/Kalimba.mp3"></audio>
+
             {/* Input for new todos */}
             <div className="flex items-center space-x-2 mb-6">
               <input
